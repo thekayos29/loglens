@@ -1,0 +1,24 @@
+services:
+  loglens:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - loglens-data:/data        # index survives restarts
+    mem_limit: 128m               # proves the low-memory claim
+    healthcheck:
+      test: ["CMD", "loglens", "healthcheck", "8080"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  app:                            # fake app that produces realistic logs
+    build: ./loggen
+    depends_on:
+      loglens:
+        condition: service_healthy
+    environment:
+      - LOGLENS_URL=http://loglens:8080/ingest?container=app
+
+volumes:
+  loglens-data:
